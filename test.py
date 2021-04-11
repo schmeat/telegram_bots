@@ -1,34 +1,10 @@
+#!/usr/bin/env python3
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 import time
 import logging
-
 from telegram_token_key import m_token
-
-#!/usr/bin/env python3
-# pylint: disable=C0116
-# This program is dedicated to the public domain under the CC0 license.
-
-"""
-Simple Bot to send timed Telegram messages.
-
-This Bot uses the Updater class to handle the bot and the JobQueue to send
-timed messages.
-
-First, a few handler functions are defined. Then, those functions are passed to
-the Dispatcher and registered at their respective places.
-Then, the bot is started and runs until we press Ctrl-C on the command line.
-
-Usage:
-Basic Alarm Bot example, sends a message after a set time.
-Press Ctrl-C on the command line or send a signal to the process to stop the
-bot.
-"""
-
-import logging
-
-from telegram import Update
-from telegram.ext import Updater, CommandHandler, CallbackContext
+import covid_stats_plotter
 
 # Enable logging
 logging.basicConfig(
@@ -36,7 +12,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-
 
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
@@ -50,7 +25,10 @@ def alarm(context: CallbackContext) -> None:
     """Send the alarm message."""
     job = context.job
     context.bot.send_message(job.context, text='Beep!')
-
+    covid_stats_plotter.plotStateCases()
+    graph = open(covid_stats_plotter.outputImage, "rb")
+    context.bot.send_photo(job.context, graph)
+    graph.close()
 
 def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
     """Remove job with given name. Returns whether job was removed."""
@@ -60,7 +38,6 @@ def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
     for job in current_jobs:
         job.schedule_removal()
     return True
-
 
 def set_timer(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
@@ -110,7 +87,6 @@ def unset(update: Update, context: CallbackContext) -> None:
     job_removed = remove_job_if_exists(str(chat_id), context)
     text = 'Timer successfully cancelled!' if job_removed else 'You have no active timer.'
     update.message.reply_text(text)
-
 
 def main() -> None:
     """Run bot."""
