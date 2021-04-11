@@ -29,6 +29,10 @@ def alarm(context: CallbackContext) -> None:
     graph = open(covid_stats_plotter.outputImage, "rb")
     context.bot.send_photo(job.context, graph)
     graph.close()
+    covid_stats_plotter.plotCountryCases()
+    graph = open(covid_stats_plotter.outputImage, "rb")
+    context.bot.send_photo(job.context, graph)
+    graph.close()
 
 def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
     """Remove job with given name. Returns whether job was removed."""
