@@ -4,6 +4,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 import time
 import logging
 from telegram_token_key import m_token
+from covid.lib.errors import CountryNotFound
 import covid_stats_plotter
 
 # Enable logging
@@ -16,20 +17,24 @@ logger = logging.getLogger(__name__)
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
 def start(update: Update, _: CallbackContext) -> None:
-    update.message.reply_text('Hi! Use /set <seconds> to set a timer')
+    update.message.reply_text('Help Menu:\n')
+    update.message.reply_text('/repeat <seconds> to set a recurrence.')
+    update.message.reply_text('/unset to cancel the recurrence')
+    update.message.reply_text('/now to get the date at this moment')
 
 def echo(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
 
-def alarm(context: CallbackContext) -> None:
+def alarm(context: CallbackContext): #, country = "canada", state = "ontario") -> None:
     """Send the alarm message."""
     job = context.job
-    context.bot.send_message(job.context, text='Beep!')
-    covid_stats_plotter.plotStateCases()
+    state = "ontario"
+    country = "canada"
+    covid_stats_plotter.plotStateCases(state)
     graph = open(covid_stats_plotter.outputImage, "rb")
     context.bot.send_photo(job.context, graph)
     graph.close()
-    covid_stats_plotter.plotCountryCases()
+    covid_stats_plotter.plotCountryCases(country)
     graph = open(covid_stats_plotter.outputImage, "rb")
     context.bot.send_photo(job.context, graph)
     graph.close()
@@ -43,26 +48,14 @@ def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
         job.schedule_removal()
     return True
 
-def set_timer(update: Update, context: CallbackContext) -> None:
+def get_once(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
-    chat_id = update.message.chat_id
     try:
-        # args[0] should contain the time for the timer in seconds
-        due = int(context.args[0])
-        if due < 0:
-            update.message.reply_text('Sorry we can not go back to future!')
-            return
-
-        job_removed = remove_job_if_exists(str(chat_id), context)
-        context.job_queue.run_once(alarm, due, context=chat_id, name=str(chat_id))
-
-        text = 'Timer successfully set!'
-        if job_removed:
-            text += ' Old one was removed.'
-        update.message.reply_text(text)
-
+        chat_id = update.message.chat_id
+        context.job_queue.run_once(alarm, 0, context=chat_id, name=str(chat_id))
+        # alarm(context)# , "canada", "ontario")
     except (IndexError, ValueError):
-        update.message.reply_text('Usage: /set <seconds>')
+        update.message.repeat_timer('Usage: /now <country> <state>')
 
 def repeat_timer(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
@@ -103,7 +96,7 @@ def main() -> None:
     # on different commands - answer in Telegram
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("help", start))
-    dispatcher.add_handler(CommandHandler("set", set_timer))
+    dispatcher.add_handler(CommandHandler("now", get_once))
     dispatcher.add_handler(CommandHandler("repeat", repeat_timer))
     dispatcher.add_handler(CommandHandler("unset", unset))
     dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), echo))
