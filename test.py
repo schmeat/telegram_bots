@@ -16,14 +16,19 @@ logger = logging.getLogger(__name__)
 
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
-def start(update: Update, _: CallbackContext) -> None:
-    update.message.reply_text('Help Menu:\n')
-    update.message.reply_text('/repeat <seconds> to set a recurrence.')
-    update.message.reply_text('/unset to cancel the recurrence')
-    update.message.reply_text('/now to get the date at this moment')
+def help(update: Update, _: CallbackContext) -> None:
+    update.message.reply_text('Help Menu:\n/repeat <seconds> to set a recurrence.\n/unset to cancel the recurrence\n/now to get the date at this moment\n/help to print this menu')
 
 def echo(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
+    if not hasattr(echo,"count"):
+        echo.count=0
+    if echo.count <= 0:
+        # context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
+        help(update, context)
+        echo.count = 5
+    else:
+        echo.count = echo.count - 1
+
 
 def alarm(context: CallbackContext): #, country = "canada", state = "ontario") -> None:
     """Send the alarm message."""
@@ -76,7 +81,7 @@ def repeat_timer(update: Update, context: CallbackContext) -> None:
         update.message.reply_text(text)
 
     except (IndexError, ValueError):
-        update.message.reply_text('Usage: /set <seconds>')
+        update.message.reply_text('Usage: /repeat <seconds>')
 
 def unset(update: Update, context: CallbackContext) -> None:
     """Remove the job if the user changed their mind."""
@@ -94,8 +99,8 @@ def main() -> None:
     dispatcher = updater.dispatcher
 
     # on different commands - answer in Telegram
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("help", start))
+    dispatcher.add_handler(CommandHandler("start", help))
+    dispatcher.add_handler(CommandHandler("help", help))
     dispatcher.add_handler(CommandHandler("now", get_once))
     dispatcher.add_handler(CommandHandler("repeat", repeat_timer))
     dispatcher.add_handler(CommandHandler("unset", unset))
