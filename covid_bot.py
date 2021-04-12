@@ -37,7 +37,6 @@ def alarm(context: CallbackContext) -> None:
     vaccinations.plotVaccinations()
 
     for image in images:
-        print(image)
         openSendPhoto(context, image)
         os.remove(image)
 
