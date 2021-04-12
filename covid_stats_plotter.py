@@ -4,8 +4,8 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
 
-outputStateImage = "country_cases.png"
-outputCountryImage = "state_cases.png"
+outputStateImage = "state_cases.png"
+outputCountryImage = "country_cases.png"
 
 def plotCountryCases(country = "canada"):
     covid_api = CovId19Data(force=False)
@@ -36,6 +36,7 @@ def plottingfunction(date, cases, deaths, title, outputImage) -> None:
     fig.subplots_adjust(bottom=0.2)
     # plt.xticks(rotation=45)
     fig.savefig(outputImage, format='png', dpi=100, bbox_inches='tight')
+    plt.close()
 
 def plotData(res, key, title = "COVID Cases", outputImage = "current_plot.png"):
     days = []

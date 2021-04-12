@@ -40,25 +40,31 @@ def plotVaccinationsForURL(url, title = "Vaccinations", outputImage = "vaccinati
     ax.legend()
     plt.xticks(rotation=45)
     fig.savefig(outputImage, format='png', dpi=100, bbox_inches='tight')
+    plt.close()
 
 def plotVaccinations():
     plotVaccinationsForURL(urlOntario, "Vaccinations for Ontario", ontarioVaccineImage)
     plotVaccinationsForURL(urlCanada, "Vaccinations for Canada", canadaVaccineImage)
 
-def getSummary():
+def getSummaryData(url, title):
     summary = {}
-    outputString = ""
-    for url in [urlCanada, urlOntario]:
-        outputString = outputString + url + "\n"
-        jsonData = json.loads(urllib.request.urlopen(url).read().decode())
-        summary['Cases'] = jsonData['data'][-1]['change_cases']
-        summary['Deaths'] = jsonData['data'][-1]['change_fatalities']
-        summary['Vaccinated'] = jsonData['data'][-1]['change_vaccinations']
-        summary['Hospitalizations'] = jsonData['data'][-1]['change_hospitalizations']
-        for key, value in summary.items():
-            outputString = outputString + str(key) + ": " + str(value) + "\n"
-        outputString = outputString + "\n"
+    outputString = title + ":\n"
+    jsonData = json.loads(urllib.request.urlopen(url).read().decode())
+    summary['Cases'] = jsonData['data'][-1]['change_cases']
+    summary['Deaths'] = jsonData['data'][-1]['change_fatalities']
+    summary['Vaccinated'] = jsonData['data'][-1]['change_vaccinations']
+    summary['Hospitalizations'] = jsonData['data'][-1]['change_hospitalizations']
 
+    for key, value in summary.items():
+        outputString += "- " + str(key) + ": ";
+        outputString += format(value,',d') + "\n"
+    outputString += "\n"
+
+    return outputString
+
+def getSummary():
+    outputString = getSummaryData(urlCanada, "Canada Summary")
+    outputString += getSummaryData(urlCanada, "Ontario Summary")
     return outputString
 
 def main() -> None:

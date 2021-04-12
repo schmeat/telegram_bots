@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
-from telegram import InputMediaPhoto
+from telegram import InputMediaPhoto, ParseMode, ChatAction
 import time
 import logging
 from telegram_token_key import m_token
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
 def help(update: Update, _: CallbackContext) -> None:
-    update.message.reply_text('Help Menu:\n/repeat <seconds> to set a recurrence.\n/unset to cancel the recurrence\n/now to get the date at this moment\n/help to print this menu')
+    update.message.reply_text('Help Menu:\n/repeat <hours> to set a recurrence.\n/unset to cancel the recurrence\n/now to get the date at this moment\n/help to print this menu')
 
 def openSendPhoto(context : CallbackContext, imageName) -> None:
     job = context.job
@@ -30,6 +30,7 @@ def openSendPhoto(context : CallbackContext, imageName) -> None:
 
 def alarm(context: CallbackContext) -> None:
     """Send the alarm message."""
+    context.bot.send_chat_action(context.job.context, action=ChatAction.UPLOAD_PHOTO)
     images = [covid_stats_plotter.outputStateImage, covid_stats_plotter.outputCountryImage, vaccinations.ontarioVaccineImage, vaccinations.canadaVaccineImage]
     state = "ontario"
     country = "canada"
@@ -69,8 +70,8 @@ def repeat_timer(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
     chat_id = update.message.chat_id
     try:
-        # args[0] should contain the time for the timer in seconds
-        due = int(context.args[0])
+        # args[0] should contain the time for the timer in hours
+        due = int(context.args[0]) * 3600
         if due < 0:
             update.message.reply_text('Sorry we can not go back to future!')
             return
@@ -84,7 +85,7 @@ def repeat_timer(update: Update, context: CallbackContext) -> None:
         update.message.reply_text(text)
 
     except (IndexError, ValueError):
-        update.message.reply_text('Usage: /repeat <seconds>')
+        update.message.reply_text('Usage: /repeat <hours>')
 
 def unset(update: Update, context: CallbackContext) -> None:
     """Remove the job if the user changed their mind."""
