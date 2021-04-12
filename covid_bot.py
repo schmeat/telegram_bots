@@ -20,23 +20,20 @@ logger = logging.getLogger(__name__)
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
 def help(update: Update, _: CallbackContext) -> None:
-    update.message.reply_text('Help Menu:\n/repeat <hours> to set a recurrence.\n/unset to cancel the recurrence\n/now to get the date at this moment\n/help to print this menu')
+    update.message.reply_text('Help Menu:\n/repeat <hours> to set a recurrence.\n/unset to cancel the recurrence\n/now to get the date at this moment\n/country <country> to print stats for a given contry\n/help to print this menu')
 
-def openSendPhoto(context : CallbackContext, imageName) -> None:
-    job = context.job
-    image = open(imageName, "rb")
-    context.bot.send_photo(job.context, image)
-    image.close()
+def getGraphs(country = "canada", state = "ontario"):
+    images = [covid_stats_plotter.outputCountryImage]
+    if state != None:
+        images.append(covid_stats_plotter.outputStateImage)
+        covid_stats_plotter.plotStateCases(state)
 
-def alarm(context: CallbackContext) -> None:
-    """Send the alarm message."""
-    context.bot.send_chat_action(context.job.context, action=ChatAction.UPLOAD_PHOTO)
-    images = [covid_stats_plotter.outputStateImage, covid_stats_plotter.outputCountryImage, vaccinations.ontarioVaccineImage, vaccinations.canadaVaccineImage]
-    state = "ontario"
-    country = "canada"
-    covid_stats_plotter.plotStateCases(state)
+    if country == "canada":
+        images.append(vaccinations.ontarioVaccineImage)
+        images.append(vaccinations.canadaVaccineImage)
+        vaccinations.plotVaccinations()
+
     covid_stats_plotter.plotCountryCases(country)
-    vaccinations.plotVaccinations()
 
     imageFiles = []
     for image in images:
@@ -46,8 +43,17 @@ def alarm(context: CallbackContext) -> None:
         ImageFile.close()
         os.remove(image)
 
-    context.bot.send_media_group(context.job.context, imageFiles)
-    context.bot.send_message(context.job.context, text=vaccinations.getSummary())
+    return imageFiles
+
+def getCanadaSummary(state = "ontario"):
+    return vaccinations.getSummary()
+
+def alarm(context: CallbackContext, state = "ontario", country = "canada") -> None:
+    """Send the alarm message."""
+    context.bot.send_chat_action(context.job.context, action=ChatAction.UPLOAD_PHOTO)
+    context.bot.send_media_group(context.job.context, getGraphs(country, state))
+    if country == "canada":
+        context.bot.send_message(context.job.context, text=getCanadaSummary(state))
 
 def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
     """Remove job with given name. Returns whether job was removed."""
@@ -64,7 +70,7 @@ def get_once(update: Update, context: CallbackContext) -> None:
         chat_id = update.message.chat_id
         context.job_queue.run_once(alarm, 0, context=chat_id, name=str(chat_id))
     except (IndexError, ValueError):
-        update.message.repeat_timer('Usage: /now <country> <state>')
+        update.message.reply_text('Usage: /now')
 
 def repeat_timer(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
@@ -94,6 +100,23 @@ def unset(update: Update, context: CallbackContext) -> None:
     text = 'Timer successfully cancelled!' if job_removed else 'You have no active timer.'
     update.message.reply_text(text)
 
+def country_data(update: Update, context: CallbackContext) -> None:
+    """Add a job to the queue."""
+    chat_id = update.message.chat_id
+    try:
+        # args[0] should contain the country
+        country = str(context.args[0]).lower()
+
+        chat_id = update.message.chat_id
+        update.message.reply_media_group(getGraphs(country=country, state=None))
+        if country == "canada":
+            update.message.reply_text(getCanadaSummary())
+        else:
+            update.message.reply_text(covid_stats_plotter.getCountrySummary(country))
+
+    except (IndexError, ValueError):
+        update.message.reply_text('Usage: /country country')
+
 def main() -> None:
     """Run bot."""
     # Create the Updater and pass it your bot's token.
@@ -108,6 +131,7 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler("now", get_once))
     dispatcher.add_handler(CommandHandler("repeat", repeat_timer))
     dispatcher.add_handler(CommandHandler("unset", unset))
+    dispatcher.add_handler(CommandHandler("country", country_data))
 
     # Start the Bot
     updater.start_polling()

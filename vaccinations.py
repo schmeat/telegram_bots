@@ -65,7 +65,7 @@ def getSummaryData(url, title):
 def getSummary():
     outputString = getSummaryData(urlCanada, "Canada Summary")
     outputString += getSummaryData(urlCanada, "Ontario Summary")
-    return outputString
+    return outputString.title()
 
 def main() -> None:
     plotVaccinations()

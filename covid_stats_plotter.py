@@ -7,6 +7,28 @@ import numpy as np
 outputStateImage = "state_cases.png"
 outputCountryImage = "country_cases.png"
 
+def getCountrySummary(country = "canada"):
+    summaryMapToday = {"New Cases Today" : "confirmed",
+                       "New Recovered Today" : "recovered",
+                       "New Deaths Today" : "deaths"};
+    summaryMapTotal = {"Total Cases" : "confirmed",
+                       "Total Recovered" : "recovered",
+                       "Total Deaths" : "deaths"};
+    covid_api = CovId19Data(force=False)
+    res = covid_api.get_history_by_country(country)[country]['history']
+    currentData = res[list(res)[-1]]
+    secondLastData = res[list(res)[-2]]
+    date = pd.to_datetime(list(res)[-1]).date()
+    outputString = "Summary for " + country + " (as of " + str(date) + ")\n"
+    for key, value in summaryMapTotal.items():
+        outputString += "- " + key + ": "
+        outputString += format(currentData[value], ',d') + "\n"
+    for key, value in summaryMapToday.items():
+        outputString += "- " + key + ": "
+        outputString += format(currentData[value] - secondLastData[value], ',d') + "\n"
+
+    return outputString.title()
+
 def plotCountryCases(country = "canada"):
     covid_api = CovId19Data(force=False)
     res = covid_api.get_history_by_country(country)
@@ -67,7 +89,7 @@ def plotData(res, key, title = "COVID Cases", outputImage = "current_plot.png"):
     plottingfunction(days, y_data, y2_data, title, outputImage)
 
 def main():
-    plotStateCases()
+    print(getCountrySummary("india"))
 
 if __name__ == '__main__':
     main()
