@@ -29,8 +29,7 @@ def echo(update, context):
     else:
         echo.count = echo.count - 1
 
-
-def alarm(context: CallbackContext): #, country = "canada", state = "ontario") -> None:
+def alarm(context: CallbackContext) -> None:
     """Send the alarm message."""
     job = context.job
     state = "ontario"
@@ -58,7 +57,6 @@ def get_once(update: Update, context: CallbackContext) -> None:
     try:
         chat_id = update.message.chat_id
         context.job_queue.run_once(alarm, 0, context=chat_id, name=str(chat_id))
-        # alarm(context)# , "canada", "ontario")
     except (IndexError, ValueError):
         update.message.repeat_timer('Usage: /now <country> <state>')
 
