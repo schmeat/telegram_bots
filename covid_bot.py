@@ -21,16 +21,6 @@ logger = logging.getLogger(__name__)
 def help(update: Update, _: CallbackContext) -> None:
     update.message.reply_text('Help Menu:\n/repeat <seconds> to set a recurrence.\n/unset to cancel the recurrence\n/now to get the date at this moment\n/help to print this menu')
 
-def echo(update, context):
-    if not hasattr(echo,"count"):
-        echo.count=0
-    if echo.count <= 0:
-        # context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
-        help(update, context)
-        echo.count = 5
-    else:
-        echo.count = echo.count - 1
-
 def openSendPhoto(context : CallbackContext, imageName) -> None:
     job = context.job
     image = open(imageName, "rb")
@@ -110,7 +100,6 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler("now", get_once))
     dispatcher.add_handler(CommandHandler("repeat", repeat_timer))
     dispatcher.add_handler(CommandHandler("unset", unset))
-    dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), echo))
 
     # Start the Bot
     updater.start_polling()
