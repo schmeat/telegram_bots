@@ -20,10 +20,28 @@ logger = logging.getLogger(__name__)
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
 def help(update: Update, _: CallbackContext) -> None:
-    update.message.reply_text('Help Menu:\n/repeat <hours> to set a recurrence.\n/unset to cancel the recurrence\n/now to get the date at this moment\n/country <country> to print stats for a given contry\n/help to print this menu')
+    update.message.reply_text('Help Menu:\n'
+                             '/repeat <hours> to set a recurrence.\n'
+                             '/unset to cancel the recurrence\n'
+                             '/now to get the data at this moment\n'
+                             '/country <country> to print stats for a given country\n'
+                             '/country_list List all of the countries\n'
+                             '/region <region> print stats for a given region\n'
+                             '/region_list print a list of regions\n'
+                             '/help to print this menu\n'
+                             '/info to print the README')
+
+def info(update: Update, _: CallbackContext) -> None:
+    readme = open("README.md", "r")
+    outString = readme.read()
+    update.message.reply_text(outString)
+    readme.close()
 
 def getGraphs(country = "canada", state = "ontario"):
-    images = [covid_stats_plotter.outputCountryImage]
+    images = []
+    if country != None:
+        images.append(covid_stats_plotter.outputCountryImage)
+        covid_stats_plotter.plotCountryCases(country)
     if state != None:
         images.append(covid_stats_plotter.outputStateImage)
         covid_stats_plotter.plotStateCases(state)
@@ -33,7 +51,6 @@ def getGraphs(country = "canada", state = "ontario"):
         images.append(vaccinations.canadaVaccineImage)
         vaccinations.plotVaccinations()
 
-    covid_stats_plotter.plotCountryCases(country)
 
     imageFiles = []
     for image in images:
@@ -105,17 +122,43 @@ def country_data(update: Update, context: CallbackContext) -> None:
     chat_id = update.message.chat_id
     try:
         # args[0] should contain the country
-        country = str(context.args[0]).lower()
+        country = " ".join(context.args).title()
 
-        chat_id = update.message.chat_id
         update.message.reply_media_group(getGraphs(country=country, state=None))
         if country == "canada":
             update.message.reply_text(getCanadaSummary())
         else:
             update.message.reply_text(covid_stats_plotter.getCountrySummary(country))
 
-    except (IndexError, ValueError):
-        update.message.reply_text('Usage: /country country')
+    except (IndexError, ValueError, KeyError):
+        update.message.reply_text('Usage: /country country'
+                                  'Check the list of countries to see if your input is not valid')
+
+def country_list(update: Update, context: CallbackContext) -> None:
+    """Add a job to the queue."""
+    chat_id = update.message.chat_id
+    update.message.reply_text(covid_stats_plotter.getListOfCountries())
+
+
+def region_data(update: Update, context: CallbackContext) -> None:
+    """Add a job to the queue."""
+    chat_id = update.message.chat_id
+    try:
+        # args[0] should contain the region
+        region = " ".join(context.args).title()
+
+        chat_id = update.message.chat_id
+        update.message.reply_media_group(getGraphs(state=region, country=None))
+        update.message.reply_text(covid_stats_plotter.getRegionSummary(region = region))
+
+    except (IndexError, ValueError, KeyError):
+        update.message.reply_text('Usage: /region <region>\n'
+                                  'Check the list of regions to see if your input is not valid')
+
+def region_list(update: Update, context: CallbackContext) -> None:
+    """Add a job to the queue."""
+    chat_id = update.message.chat_id
+    update.message.reply_text(covid_stats_plotter.getListOfRegions())
 
 def main() -> None:
     """Run bot."""
@@ -132,6 +175,10 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler("repeat", repeat_timer))
     dispatcher.add_handler(CommandHandler("unset", unset))
     dispatcher.add_handler(CommandHandler("country", country_data))
+    dispatcher.add_handler(CommandHandler("country_list", country_list))
+    dispatcher.add_handler(CommandHandler("region", region_data))
+    dispatcher.add_handler(CommandHandler("region_list", region_list))
+    dispatcher.add_handler(CommandHandler("info", info))
 
     # Start the Bot
     updater.start_polling()

@@ -7,39 +7,65 @@ import numpy as np
 outputStateImage = "state_cases.png"
 outputCountryImage = "country_cases.png"
 
-def getCountrySummary(country = "canada"):
+def getSummary(res, title):
     summaryMapToday = {"New Cases Today" : "confirmed",
                        "New Recovered Today" : "recovered",
                        "New Deaths Today" : "deaths"};
     summaryMapTotal = {"Total Cases" : "confirmed",
                        "Total Recovered" : "recovered",
                        "Total Deaths" : "deaths"};
-    covid_api = CovId19Data(force=False)
-    res = covid_api.get_history_by_country(country)[country]['history']
     currentData = res[list(res)[-1]]
     secondLastData = res[list(res)[-2]]
     date = pd.to_datetime(list(res)[-1]).date()
-    outputString = "Summary for " + country + " (as of " + str(date) + ")\n"
+    outputString = "Summary for " + title + " (as of " + str(date) + ")\n"
     for key, value in summaryMapTotal.items():
-        outputString += "- " + key + ": "
-        outputString += format(currentData[value], ',d') + "\n"
+        if value in currentData:
+            outputString += "- " + key + ": "
+            outputString += format(currentData[value], ',d') + "\n"
     for key, value in summaryMapToday.items():
-        outputString += "- " + key + ": "
-        outputString += format(currentData[value] - secondLastData[value], ',d') + "\n"
+        if value in currentData:
+            outputString += "- " + key + ": "
+            outputString += format(currentData[value] - secondLastData[value], ',d') + "\n"
 
     return outputString.title()
+
+def getCountrySummary(country = "canada"):
+    covid_api = CovId19Data(force=False)
+    country_key = country.lower().replace(" ", "_")
+    res = covid_api.get_history_by_country(country)[country_key]['history']
+    return getSummary(res, country)
+
+def getRegionSummary(region = "Ontario"):
+    covid_api = CovId19Data(force=False)
+    region_key = region.lower().replace(" ", "_")
+    res = covid_api.get_history_by_province(region)[region_key]['history']
+    return getSummary(res, region)
+
+def getListOfCountries():
+    covid_api = CovId19Data(force=False)
+    outputString = ""
+    for country in covid_api.show_available_countries():
+        outputString += country + "\n"
+    return outputString
+
+def getListOfRegions():
+    covid_api = CovId19Data(force=False)
+    outputString = ""
+    for country in covid_api.show_available_regions():
+        outputString += country + "\n"
+    return outputString
 
 def plotCountryCases(country = "canada"):
     covid_api = CovId19Data(force=False)
     res = covid_api.get_history_by_country(country)
     title = "COVID Cases for " + country
-    plotData(res, country, title, outputCountryImage)
+    plotData(res, country, title.title(), outputCountryImage)
 
 def plotStateCases(state = "ontario"):
     covid_api = CovId19Data(force=False)
     res = covid_api.get_history_by_province(state)
     title = "COVID Cases for " + state
-    plotData(res, state, title, outputStateImage)
+    plotData(res, state, title.title(), outputStateImage)
 
 def plottingfunction(date, cases, deaths, title, outputImage) -> None:
     fig, ax = plt.subplots()
@@ -71,7 +97,8 @@ def plotData(res, key, title = "COVID Cases", outputImage = "current_plot.png"):
     movingWindow2 = windowSize * [0]
     last = 0
     last2 = 0
-    for day, data in res[key]['history'].items():
+    dbKey = key.lower().replace(" ", "_")
+    for day, data in res[dbKey]['history'].items():
         days.append(day)
         confirmed = data['confirmed']
         deaths = data['deaths']
@@ -89,7 +116,9 @@ def plotData(res, key, title = "COVID Cases", outputImage = "current_plot.png"):
     plottingfunction(days, y_data, y2_data, title, outputImage)
 
 def main():
-    print(getCountrySummary("india"))
+    print(getCountrySummary("United Kingdom"))
+    print(getRegionSummary("Ontario"))
+    print(getListOfRegions())
 
 if __name__ == '__main__':
     main()
