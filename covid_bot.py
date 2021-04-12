@@ -6,6 +6,8 @@ import logging
 from telegram_token_key import m_token
 from covid.lib.errors import CountryNotFound
 import covid_stats_plotter
+import vaccinations
+import os
 
 # Enable logging
 logging.basicConfig(
@@ -29,19 +31,25 @@ def echo(update, context):
     else:
         echo.count = echo.count - 1
 
+def openSendPhoto(context : CallbackContext, imageName) -> None:
+    job = context.job
+    image = open(imageName, "rb")
+    context.bot.send_photo(job.context, image)
+    image.close()
+
 def alarm(context: CallbackContext) -> None:
     """Send the alarm message."""
-    job = context.job
+    images = [covid_stats_plotter.outputStateImage, covid_stats_plotter.outputCountryImage, vaccinations.ontarioVaccineImage, vaccinations.canadaVaccineImage]
     state = "ontario"
     country = "canada"
     covid_stats_plotter.plotStateCases(state)
-    graph = open(covid_stats_plotter.outputImage, "rb")
-    context.bot.send_photo(job.context, graph)
-    graph.close()
     covid_stats_plotter.plotCountryCases(country)
-    graph = open(covid_stats_plotter.outputImage, "rb")
-    context.bot.send_photo(job.context, graph)
-    graph.close()
+    vaccinations.plotVaccinations()
+
+    for image in images:
+        print(image)
+        openSendPhoto(context, image)
+        os.remove(image)
 
 def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
     """Remove job with given name. Returns whether job was removed."""
