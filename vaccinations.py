@@ -15,6 +15,8 @@ import pandas as pd
 
 ontarioVaccineImage = "ontario_vaccines.png"
 canadaVaccineImage = "canada_vaccines.png"
+urlOntario = "https://api.covid19tracker.ca/reports/province/ON"
+urlCanada = "https://api.covid19tracker.ca/reports"
 
 def plotVaccinationsForURL(url, title = "Vaccinations", outputImage = "vaccinations.png"):
     jsonData = json.loads(urllib.request.urlopen(url).read().decode())
@@ -40,13 +42,28 @@ def plotVaccinationsForURL(url, title = "Vaccinations", outputImage = "vaccinati
     fig.savefig(outputImage, format='png', dpi=100, bbox_inches='tight')
 
 def plotVaccinations():
-    urlOntario = "https://api.covid19tracker.ca/reports/province/ON"
-    urlCanada = "https://api.covid19tracker.ca/reports"
     plotVaccinationsForURL(urlOntario, "Vaccinations for Ontario", ontarioVaccineImage)
     plotVaccinationsForURL(urlCanada, "Vaccinations for Canada", canadaVaccineImage)
 
+def getSummary():
+    summary = {}
+    outputString = ""
+    for url in [urlCanada, urlOntario]:
+        outputString = outputString + url + "\n"
+        jsonData = json.loads(urllib.request.urlopen(url).read().decode())
+        summary['Cases'] = jsonData['data'][-1]['change_cases']
+        summary['Deaths'] = jsonData['data'][-1]['change_fatalities']
+        summary['Vaccinated'] = jsonData['data'][-1]['change_vaccinations']
+        summary['Hospitalizations'] = jsonData['data'][-1]['change_hospitalizations']
+        for key, value in summary.items():
+            outputString = outputString + str(key) + ": " + str(value) + "\n"
+        outputString = outputString + "\n"
+
+    return outputString
+
 def main() -> None:
     plotVaccinations()
+    print(getSummary())
 
 if __name__ == '__main__':
     main()

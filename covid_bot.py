@@ -41,6 +41,8 @@ def alarm(context: CallbackContext) -> None:
         openSendPhoto(context, image)
         os.remove(image)
 
+    context.bot.send_message(context.job.context, text=vaccinations.getSummary())
+
 def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
     """Remove job with given name. Returns whether job was removed."""
     current_jobs = context.job_queue.get_jobs_by_name(name)
