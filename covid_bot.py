@@ -130,9 +130,10 @@ def country_data(update: Update, context: CallbackContext) -> None:
         else:
             update.message.reply_text(covid_stats_plotter.getCountrySummary(country))
 
-    except (IndexError, ValueError, KeyError):
-        update.message.reply_text('Usage: /country country'
+    except:
+        update.message.reply_text('Usage: /country <country>\n'
                                   'Check the list of countries to see if your input is not valid')
+
 
 def country_list(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
@@ -151,7 +152,7 @@ def region_data(update: Update, context: CallbackContext) -> None:
         update.message.reply_media_group(getGraphs(state=region, country=None))
         update.message.reply_text(covid_stats_plotter.getRegionSummary(region = region))
 
-    except (IndexError, ValueError, KeyError):
+    except:
         update.message.reply_text('Usage: /region <region>\n'
                                   'Check the list of regions to see if your input is not valid')
 

@@ -18,14 +18,14 @@ def getSummary(res, title):
     secondLastData = res[list(res)[-2]]
     date = pd.to_datetime(list(res)[-1]).date()
     outputString = "Summary for " + title + " (as of " + str(date) + ")\n"
-    for key, value in summaryMapTotal.items():
-        if value in currentData:
-            outputString += "- " + key + ": "
-            outputString += format(currentData[value], ',d') + "\n"
     for key, value in summaryMapToday.items():
         if value in currentData:
             outputString += "- " + key + ": "
             outputString += format(currentData[value] - secondLastData[value], ',d') + "\n"
+    for key, value in summaryMapTotal.items():
+        if value in currentData:
+            outputString += "- " + key + ": "
+            outputString += format(currentData[value], ',d') + "\n"
 
     return outputString.title()
 
