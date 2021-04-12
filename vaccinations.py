@@ -3,39 +3,51 @@
 """
 Created on Sat Apr 10 17:47:25 2021
 
-This program connects to the covid19tracker.ca API to pull in information on COVID cases and vaccines 
+This program connects to the covid19tracker.ca API to pull in information on COVID cases and vaccines
 And sends an automated response to a Telegram group via the Telegram Bot wheresmyfuckingvaccine
 
 @author: Anirudh
 """
-
-import urllib
+import urllib.request
 import json
-import telebot
+from matplotlib import pyplot as plt
+import pandas as pd
 
-url = "https://api.covid19tracker.ca/summary"
-data = urllib.request.urlopen(url).read().decode()
-obj = json.loads(data)
+ontarioVaccineImage = "ontario_vaccines.png"
 
-url_on = "https://api.covid19tracker.ca/reports/province/ON"
-data_on = urllib.request.urlopen(url_on).read().decode()
-obj_on = json.loads(data_on)
+def plotVaccinationsForOntario():
+    url= "https://api.covid19tracker.ca/reports/province/ON"
+    jsonData = json.loads(urllib.request.urlopen(url).read().decode())
+    dates = []
+    total_vaccinations = []
+    total_vaccines_distributed = []
+
+    print(jsonData['data'][0])
+    for day_data in jsonData['data']:
+        date = day_data['date']
+        dates.append(date)
+        total_vaccinations.append(day_data['total_vaccinations'])
+        total_vaccines_distributed.append(day_data['total_vaccines_distributed'])
+
+    dates = pd.to_datetime(dates)
+    fig, ax = plt.subplots()
+    ax.set_title("Vaccinations for Ontario")
+    ax.plot(dates, total_vaccinations, label="Total Vaccinations")
+    ax.plot(dates, total_vaccines_distributed, 'r', label="Vaccines Distributed")
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Vaccinations')
+    ax.legend()
+    plt.xticks(rotation=45)
+    fig.savefig(ontarioVaccineImage, format='png', dpi=100, bbox_inches='tight')
+
+def plotVaccinations():
+    urlCanada = "https://api.covid19tracker.ca/summary"
+    urlOntario = "https://api.covid19tracker.ca/reports/province/ON"
+    plotVaccinationsForOntario()
 
 
-percent_nat = (int(obj['data'][-1]['total_vaccinations'])-int(obj['data'][-1]['total_vaccinated']))*100/38048738
-str_nat = ("National\nNew COVID Cases: " + str("{:,}".format(int(obj['data'][0]['change_cases']))) +"\nDaily Doses given: " + str("{:,}".format(int(obj['data'][0]['change_vaccinations']))) + "\nPercent Vaccinated : " + str('{:.2f}%'.format(percent_nat)) + "\nLast updated at : " + obj['last_updated'])
-#print(str_nat)
+def main() -> None:
+    plotVaccinations()
 
-percent_on = (obj_on['data'][-1]['total_vaccinations']-obj_on['data'][-1]['total_vaccinated'])*100/14755211
-str_on = ("\n\nOntario:\nNew COVID Cases: " + str("{:,}".format(obj_on['data'][-1]['change_cases'])) + "\nDaily Doses given: " + str("{:,}".format(obj_on['data'][-1]['change_vaccinations'])) + "\nPercent Vaccinated : " + str('{:.2f}%'.format(percent_on)) + "\nLast updated at : " + obj_on['last_updated'])
-#print(str_on)
-
-total_string = str_nat + str_on
-#print(total_string)
-
-# chat ID: -redacted
-
-#connect to Telegram
-
-bot = telebot.TeleBot("redacted", parse_mode=None)
-bot.send_message(-redacted,total_string)
+if __name__ == '__main__':
+    main()
