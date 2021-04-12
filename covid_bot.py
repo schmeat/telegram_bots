@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram import InputMediaPhoto
 import time
 import logging
 from telegram_token_key import m_token
@@ -36,10 +37,15 @@ def alarm(context: CallbackContext) -> None:
     covid_stats_plotter.plotCountryCases(country)
     vaccinations.plotVaccinations()
 
+    imageFiles = []
     for image in images:
-        openSendPhoto(context, image)
+        ImageFile = open(image, "rb")
+        MediaImage = InputMediaPhoto(ImageFile)
+        imageFiles.append(MediaImage)
+        ImageFile.close()
         os.remove(image)
 
+    context.bot.send_media_group(context.job.context, imageFiles)
     context.bot.send_message(context.job.context, text=vaccinations.getSummary())
 
 def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
