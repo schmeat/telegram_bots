@@ -62,15 +62,30 @@ def getGraphs(country = "canada", state = "ontario"):
 
     return imageFiles
 
-def getCanadaSummary(state = "ontario"):
-    return vaccinations.getSummary()
+def getSummary(country = None, state = None) -> str:
+    countrySummary = ""
+    stateSummary = ""
+    if country != None:
+        country = country.lower()
+        countrySummary = covid_stats_plotter.getCountrySummary(country)
+    if state != None:
+        state = state.lower()
+        stateSummary = covid_stats_plotter.getRegionSummary(state)
 
-def alarm(context: CallbackContext, state = "ontario", country = "canada") -> None:
+    if (country == "canada") or (state == "ontario"):
+        countryVaccines, stateVaccines = vaccinations.getSummary()
+        if country == "canada":
+            countrySummary += countryVaccines
+        if state == "ontario":
+            stateSummary += stateVaccines
+
+    return (countrySummary + stateSummary)
+
+def alarm(context: CallbackContext, country = "canada", state = "ontario") -> None:
     """Send the alarm message."""
     context.bot.send_chat_action(context.job.context, action=ChatAction.UPLOAD_PHOTO)
     context.bot.send_media_group(context.job.context, getGraphs(country, state))
-    if country == "canada":
-        context.bot.send_message(context.job.context, text=getCanadaSummary(state))
+    context.bot.send_message(context.job.context, text=getSummary(country, state))
 
 def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
     """Remove job with given name. Returns whether job was removed."""
@@ -83,11 +98,9 @@ def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
 
 def get_once(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
-    try:
-        chat_id = update.message.chat_id
-        context.job_queue.run_once(alarm, 0, context=chat_id, name=str(chat_id))
-    except (IndexError, ValueError):
-        update.message.reply_text('Usage: /now')
+    update.message.reply_chat_action(action=ChatAction.UPLOAD_PHOTO)
+    update.message.reply_media_group(getGraphs())
+    update.message.reply_text(getSummary(country="canada", state="ontario"))
 
 def repeat_timer(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
@@ -123,17 +136,12 @@ def country_data(update: Update, context: CallbackContext) -> None:
     try:
         # args[0] should contain the country
         country = " ".join(context.args).title()
-
         update.message.reply_media_group(getGraphs(country=country, state=None))
-        if country == "canada":
-            update.message.reply_text(getCanadaSummary())
-        else:
-            update.message.reply_text(covid_stats_plotter.getCountrySummary(country))
+        update.message.reply_text(getSummary(country=country))
 
     except:
         update.message.reply_text('Usage: /country <country>\n'
                                   'Check the list of countries to see if your input is not valid')
-
 
 def country_list(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
@@ -150,7 +158,7 @@ def region_data(update: Update, context: CallbackContext) -> None:
 
         chat_id = update.message.chat_id
         update.message.reply_media_group(getGraphs(state=region, country=None))
-        update.message.reply_text(covid_stats_plotter.getRegionSummary(region = region))
+        update.message.reply_text(getSummary(state=region))
 
     except:
         update.message.reply_text('Usage: /region <region>\n'

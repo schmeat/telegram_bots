@@ -50,14 +50,8 @@ def getSummaryData(url, title):
     summary = {}
     jsonData = json.loads(urllib.request.urlopen(url).read().decode())
     outputString = title + " (As of " + jsonData['data'][-1]['date'] + "):\n"
-    summary['New Cases'] = jsonData['data'][-1]['change_cases']
-    summary['New Deaths'] = jsonData['data'][-1]['change_fatalities']
     summary['New Vaccinated'] = jsonData['data'][-1]['change_vaccinations']
-    summary['New Hospitalizations'] = jsonData['data'][-1]['change_hospitalizations']
-    summary['Total Cases'] = jsonData['data'][-1]['total_cases']
-    summary['Total Deaths'] = jsonData['data'][-1]['total_fatalities']
     summary['Total Vaccinated'] = jsonData['data'][-1]['total_vaccinations']
-    summary['Total Hospitalizations'] = jsonData['data'][-1]['total_hospitalizations']
 
     for key, value in summary.items():
         outputString += "- " + str(key) + ": ";
@@ -67,9 +61,9 @@ def getSummaryData(url, title):
     return outputString
 
 def getSummary():
-    outputString = getSummaryData(urlCanada, "Canada Summary")
-    outputString += getSummaryData(urlOntario, "Ontario Summary")
-    return outputString.title()
+    countryString = getSummaryData(urlCanada, "Canada Vaccinations")
+    provinceString = getSummaryData(urlOntario, "Ontario Vaccinations")
+    return (countryString.title(), provinceString.title())
 
 def main() -> None:
     plotVaccinations()
