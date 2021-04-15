@@ -9,6 +9,7 @@ from covid.lib.errors import CountryNotFound
 import covid_stats_plotter
 import vaccinations
 import os
+import datetime
 
 # Enable logging
 logging.basicConfig(
@@ -84,23 +85,84 @@ def getSummary(country = None, state = None) -> str:
 def alarm(context: CallbackContext, country = "canada", state = "ontario") -> None:
     """Send the alarm message."""
     context.bot.send_chat_action(context.job.context, action=ChatAction.UPLOAD_PHOTO)
-    context.bot.send_media_group(context.job.context, getGraphs(country, state))
-    context.bot.send_message(context.job.context, text=getSummary(country, state))
+    try:
+        context.bot.send_media_group(context.job.context, getGraphs(country, state))
+        context.bot.send_message(context.job.context, text=getSummary(country, state))
+    except:
+        context.bot.send_message(context.job.context, text="Sorry, encountered an error :(")
 
-def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
-    """Remove job with given name. Returns whether job was removed."""
-    current_jobs = context.job_queue.get_jobs_by_name(name)
+def list_jobs(update: Update, context: CallbackContext) -> None:
+    current_jobs = context.job_queue.get_jobs_by_name(str(update.message.chat_id))
+    outString = ""
     if not current_jobs:
-        return False
-    for job in current_jobs:
-        job.schedule_removal()
-    return True
+        outString = "No scheduled jobs"
+    else:
+        count = 1
+        for job in current_jobs:
+            outString += str(count) + ": " + str(job.trigger) + "\n"
+            count += 1
+    update.message.reply_text(outString)
+
+def delete_job(update: Update, context: CallbackContext) -> None:
+    current_jobs = context.job_queue.get_jobs_by_name(str(update.message.chat_id))
+    if not current_jobs:
+        update.message.reply_text("No scheduled jobs")
+        return
+    else:
+        try:
+            jobs = []
+            if str(context.args[0]) == "all":
+                jobs = current_jobs
+            else:
+                jobs.append(current_jobs[int(context.args[0])-1])
+            for job in jobs:
+                update.message.reply_text("Deleting job: " + str(job.trigger))
+                job.schedule_removal()
+        except (IndexError, ValueError):
+            update.message.reply_text("Job not found.")
 
 def get_once(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
-    update.message.reply_chat_action(action=ChatAction.UPLOAD_PHOTO)
-    update.message.reply_media_group(getGraphs())
-    update.message.reply_text(getSummary(country="canada", state="ontario"))
+    country = "canada"
+    state = "ontario"
+    try:
+        if len(context.args) >= 1:
+            country = str(context.args[0]).lower()
+            state = None
+        if len(context.args) >= 2:
+            state = str(context.args[1]).lower()
+        update.message.reply_chat_action(action=ChatAction.UPLOAD_PHOTO)
+        update.message.reply_media_group(getGraphs(country=country, state=state))
+        update.message.reply_text(getSummary(country=country, state=state))
+    except (IndexError, ValueError):
+        update.message.reply_text("Usage: /now [country] [region]")
+    except:
+        update.message.reply_text("Country or State not found")
+
+def daily(update: Update, context: CallbackContext) -> None:
+    """Add a job to the queue."""
+    chat_id = update.message.chat_id
+    try:
+        # args[0] should contain the time of day
+        time_format = "%H:%M"
+        time = datetime.datetime.strptime(str(context.args[0]), time_format)
+        # TODO error check for time
+
+        country = "canada"
+        state = "ontario"
+        if len(context.args) >= 2:
+            country = str(context.args[1]).lower()
+            state = None
+        if len(context.args) >= 3:
+            state = str(context.args[2]).lower()
+        getDataFunc = lambda context: alarm(context=context, country=country, state=state)
+        context.job_queue.run_daily(getDataFunc, time.time(), context=chat_id, name=str(chat_id))
+
+        text = 'Schedule successfully set!'
+        update.message.reply_text(text)
+
+    except (IndexError, ValueError):
+        update.message.reply_text('Usage: /daily <Time in UTC> [Country] [Region]')
 
 def repeat_timer(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
@@ -120,24 +182,14 @@ def repeat_timer(update: Update, context: CallbackContext) -> None:
         if len(context.args) >= 3:
             state = str(context.args[2]).lower()
 
-        job_removed = remove_job_if_exists(str(chat_id), context)
         getDataFunc = lambda context: alarm(context=context, country=country, state=state)
         context.job_queue.run_repeating(getDataFunc, due, context=chat_id, name=str(chat_id))
 
-        text = 'Timer successfully set!'
-        if job_removed:
-            text += ' Old one was removed.'
+        text = 'Recurrance successfully set!'
         update.message.reply_text(text)
 
     except (IndexError, ValueError):
-        update.message.reply_text('Usage: /repeat <hours>')
-
-def unset(update: Update, context: CallbackContext) -> None:
-    """Remove the job if the user changed their mind."""
-    chat_id = update.message.chat_id
-    job_removed = remove_job_if_exists(str(chat_id), context)
-    text = 'Timer successfully cancelled!' if job_removed else 'You have no active timer.'
-    update.message.reply_text(text)
+        update.message.reply_text('Usage: /repeat <hours> [Country] [Region]')
 
 def country_data(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
@@ -191,12 +243,14 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler("help", help))
     dispatcher.add_handler(CommandHandler("now", get_once))
     dispatcher.add_handler(CommandHandler("repeat", repeat_timer))
-    dispatcher.add_handler(CommandHandler("unset", unset))
+    dispatcher.add_handler(CommandHandler("daily", daily))
     dispatcher.add_handler(CommandHandler("country", country_data))
     dispatcher.add_handler(CommandHandler("country_list", country_list))
     dispatcher.add_handler(CommandHandler("region", region_data))
     dispatcher.add_handler(CommandHandler("region_list", region_list))
     dispatcher.add_handler(CommandHandler("info", info))
+    dispatcher.add_handler(CommandHandler("jobs", list_jobs))
+    dispatcher.add_handler(CommandHandler("delete", delete_job))
 
     # Start the Bot
     updater.start_polling()
