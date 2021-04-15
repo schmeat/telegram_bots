@@ -22,15 +22,18 @@ logger = logging.getLogger(__name__)
 # context. Error handlers also receive the raised TelegramError object in error.
 def help(update: Update, _: CallbackContext) -> None:
     update.message.reply_text('Help Menu:\n'
-                             '/repeat <hours> to set a recurrence.\n'
-                             '/unset to cancel the recurrence\n'
-                             '/now to get the data at this moment\n'
-                             '/country <country> to print stats for a given country\n'
-                             '/country_list List all of the countries\n'
-                             '/region <region> print stats for a given region\n'
-                             '/region_list print a list of regions\n'
-                             '/help to print this menu\n'
-                             '/info to print the README')
+                             '/now [country] [state/province]\n\tto get the data at this moment\n'
+                             '/repeat <hours> [country] [ontario]\n\tto set a recurrence.\n'
+                             '/daily HH:MM [country] [state/province]\n\tto set a daily schedule in UTC time\n'
+                             '/jobs\n\tList the scheduled jobs'
+                             '/delete <N>\n\tDelete Nth job'
+                             '/delete all\n\tDelete all jobs'
+                             '/country <country>\n\t to print stats for a given country\n'
+                             '/country_list\n\t List all of the countries\n'
+                             '/region <region>\n\t print stats for a given region\n'
+                             '/region_list\n\t print a list of regions\n'
+                             '/help\n\t to print this menu\n'
+                             '/info\n\t to print the README')
 
 def info(update: Update, _: CallbackContext) -> None:
     readme = open("README.md", "r")
@@ -162,14 +165,14 @@ def daily(update: Update, context: CallbackContext) -> None:
         update.message.reply_text(text)
 
     except (IndexError, ValueError):
-        update.message.reply_text('Usage: /daily <Time in UTC> [Country] [Region]')
+        update.message.reply_text('Usage: /daily <HH:MM Time in UTC> [Country] [Region]')
 
 def repeat_timer(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
     chat_id = update.message.chat_id
     try:
         # args[0] should contain the time for the timer in hours
-        due = int(context.args[0]) # * 3600
+        due = int(context.args[0]) * 3600
         if due < 0:
             update.message.reply_text('Sorry we can not go back to future!')
             return
