@@ -107,13 +107,22 @@ def repeat_timer(update: Update, context: CallbackContext) -> None:
     chat_id = update.message.chat_id
     try:
         # args[0] should contain the time for the timer in hours
-        due = int(context.args[0]) * 3600
+        due = int(context.args[0]) # * 3600
         if due < 0:
             update.message.reply_text('Sorry we can not go back to future!')
             return
 
+        country = "canada"
+        state = "ontario"
+        if len(context.args) >= 2:
+            country = str(context.args[1]).lower()
+            state = None
+        if len(context.args) >= 3:
+            state = str(context.args[2]).lower()
+
         job_removed = remove_job_if_exists(str(chat_id), context)
-        context.job_queue.run_repeating(alarm, due, context=chat_id, name=str(chat_id))
+        getDataFunc = lambda context: alarm(context=context, country=country, state=state)
+        context.job_queue.run_repeating(getDataFunc, due, context=chat_id, name=str(chat_id))
 
         text = 'Timer successfully set!'
         if job_removed:
