@@ -149,7 +149,6 @@ def daily(update: Update, context: CallbackContext) -> None:
         # args[0] should contain the time of day
         time_format = "%H:%M"
         time = datetime.datetime.strptime(str(context.args[0]), time_format)
-        # TODO error check for time
 
         country = "canada"
         state = "ontario"

@@ -2,3 +2,4 @@ telegram_token_key.py
 *.pyc
 __pycache__
 *.png
+help.txt
