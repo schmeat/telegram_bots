@@ -71,10 +71,9 @@ def plottingfunction(date, cases, deaths, title, outputImage) -> None:
     fig, ax = plt.subplots()
     ax.set_title(title + " (7-day Average)")
     lns1 = ax.plot(date, cases, label="Cases")
-    ax.set_xlabel("Date")
     ax.set_ylabel("Cases")
     ax.legend()
-    # plt.xticks(rotation=45)
+    plt.xticks(rotation=45)
     ax2=ax.twinx();
     lns2 = ax2.plot(date, deaths, 'r', label="Deaths")
     ax2.set_ylabel("Deaths")

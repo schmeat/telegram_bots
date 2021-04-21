@@ -44,15 +44,14 @@ def plotVaccinationsForURL(url, title = "Vaccinations", outputImage = "vaccinati
     ax.set_title(title)
     ln1 = ax.plot(dates, total_vaccinations, label="Total Vaccinations")
     ln2 = ax.plot(dates, total_vaccines_distributed, 'r', label="Vaccines Distributed")
-    ax.set_xlabel('Date')
     ax.set_ylabel('Total Vaccinations')
+    plt.xticks(rotation=45)
     ax2=ax.twinx()
     ln3 = ax2.plot(dates, new_vaccinations, 'b', label="New Vaccintations (7-day avg)")
     ax2.set_ylabel("New Vaccinations")
     lns = ln1 + ln2 + ln3
     labs = [l.get_label() for l in lns]
     ax.legend(lns, labs, loc=0)
-    plt.xticks(rotation=45)
     fig.savefig(outputImage, format='png', dpi=100, bbox_inches='tight')
     plt.close()
 
