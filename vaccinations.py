@@ -23,6 +23,11 @@ def plotVaccinationsForURL(url, title = "Vaccinations", outputImage = "vaccinati
     dates = []
     total_vaccinations = []
     total_vaccines_distributed = []
+    new_vaccinations = []
+    windowSize = 7
+    movingWindow = 7 * [0]
+    index = 0
+    last = 0
 
     for day_data in jsonData['data']:
         date = pd.to_datetime(day_data['date'])
@@ -30,21 +35,30 @@ def plotVaccinationsForURL(url, title = "Vaccinations", outputImage = "vaccinati
             dates.append(date)
             total_vaccinations.append(day_data['total_vaccinations'])
             total_vaccines_distributed.append(day_data['total_vaccines_distributed'])
+            movingWindow[index] = day_data['change_vaccinations']
+            new_vaccinations.append(sum(movingWindow)/len(movingWindow))
+            last = index
+            index = 0 if (index == (windowSize-1)) else (index+1)
 
     fig, ax = plt.subplots()
     ax.set_title(title)
-    ax.plot(dates, total_vaccinations, label="Total Vaccinations")
-    ax.plot(dates, total_vaccines_distributed, 'r', label="Vaccines Distributed")
+    ln1 = ax.plot(dates, total_vaccinations, label="Total Vaccinations")
+    ln2 = ax.plot(dates, total_vaccines_distributed, 'r', label="Vaccines Distributed")
     ax.set_xlabel('Date')
-    ax.set_ylabel('Vaccinations')
-    ax.legend()
+    ax.set_ylabel('Total Vaccinations')
+    ax2=ax.twinx()
+    ln3 = ax2.plot(dates, new_vaccinations, 'b', label="New Vaccintations (7-day avg)")
+    ax2.set_ylabel("New Vaccinations")
+    lns = ln1 + ln2 + ln3
+    labs = [l.get_label() for l in lns]
+    ax.legend(lns, labs, loc=0)
     plt.xticks(rotation=45)
     fig.savefig(outputImage, format='png', dpi=100, bbox_inches='tight')
     plt.close()
 
 def plotVaccinations():
-    plotVaccinationsForURL(urlOntario, "Vaccinations for Ontario", ontarioVaccineImage)
     plotVaccinationsForURL(urlCanada, "Vaccinations for Canada", canadaVaccineImage)
+    plotVaccinationsForURL(urlOntario, "Vaccinations for Ontario", ontarioVaccineImage)
 
 def getSummaryData(url, title):
     summary = {}

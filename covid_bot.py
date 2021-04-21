@@ -51,8 +51,8 @@ def getGraphs(country = "canada", state = "ontario"):
         covid_stats_plotter.plotStateCases(state)
 
     if country == "canada":
-        images.append(vaccinations.ontarioVaccineImage)
         images.append(vaccinations.canadaVaccineImage)
+        images.append(vaccinations.ontarioVaccineImage)
         vaccinations.plotVaccinations()
 
 

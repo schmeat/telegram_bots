@@ -69,7 +69,7 @@ def plotStateCases(state = "ontario"):
 
 def plottingfunction(date, cases, deaths, title, outputImage) -> None:
     fig, ax = plt.subplots()
-    ax.set_title(title + " (7 Day Rolling Average)")
+    ax.set_title(title + " (7-day Average)")
     lns1 = ax.plot(date, cases, label="Cases")
     ax.set_xlabel("Date")
     ax.set_ylabel("Cases")
