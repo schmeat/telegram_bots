@@ -14,9 +14,17 @@ def getSummary(res, title):
     summaryMapTotal = {"Total Cases" : "confirmed",
                        "Total Recovered" : "recovered",
                        "Total Deaths" : "deaths"};
-    currentData = res[list(res)[-1]]
-    secondLastData = res[list(res)[-2]]
-    date = pd.to_datetime(list(res)[-1]).date()
+    current_index = -1
+    currentData = res[list(res)[current_index]]
+    while float(currentData['change_confirmed']) == 0.0 and float(currentData['change_deaths']) == 0.0 and float(currentData['change_recovered']) == 0.0:
+        current_index -= 1
+        try:
+            currentData = res[list(res)[current_index]]
+        except:
+            return "Couldn't find valid data."
+
+    secondLastData = res[list(res)[current_index - 1]]
+    date = pd.to_datetime(list(res)[current_index]).date()
     outputString = "Summary for " + title + " (as of " + str(date) + ")\n"
     for key, value in summaryMapToday.items():
         if value in currentData:
@@ -115,9 +123,8 @@ def plotData(res, key, title = "COVID Cases", outputImage = "current_plot.png"):
     plottingfunction(days, y_data, y2_data, title, outputImage)
 
 def main():
-    print(getCountrySummary("United Kingdom"))
+    print(getCountrySummary("India"))
     print(getRegionSummary("Ontario"))
-    print(getListOfRegions())
 
 if __name__ == '__main__':
     main()
