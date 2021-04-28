@@ -54,7 +54,7 @@ def getGraphs(country = "canada", state = "ontario"):
         images.append(vaccinations.canadaVaccineImage)
         vaccinations.plotCanadaVaccinations()
 
-    if vaccinations.plotVaccinations(state):
+    if state != None and vaccinations.plotVaccinations(state):
         images.append(vaccinations.stateVaccineImage)
 
     imageFiles = []
@@ -76,10 +76,10 @@ def getSummary(country = None, state = None) -> str:
     if state != None:
         state = state.lower()
         stateSummary = covid_stats_plotter.getRegionSummary(state)
+        stateSummary += vaccinations.getSummary(state)
 
     if country == "canada":
         countrySummary += vaccinations.getCanadaSummary()
-    stateSummary += vaccinations.getSummary(state)
 
     return (countrySummary + stateSummary)
 
