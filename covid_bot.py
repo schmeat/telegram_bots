@@ -85,11 +85,12 @@ def getSummary(country = None, state = None) -> str:
 
 def alarm(context: CallbackContext, country = "canada", state = "ontario") -> None:
     """Send the alarm message."""
-    context.bot.send_chat_action(context.job.context, action=ChatAction.UPLOAD_PHOTO)
-    context.bot.send_media_group(context.job.context, getGraphs(country, state))
-    context.bot.send_message(context.job.context, text=getSummary(country, state))
-    # except:
-    #     context.bot.send_message(context.job.context, text="Sorry, encountered an error :(")
+    try:
+        context.bot.send_chat_action(context.job.context, action=ChatAction.UPLOAD_PHOTO)
+        context.bot.send_media_group(context.job.context, getGraphs(country, state))
+        context.bot.send_message(context.job.context, text=getSummary(country, state))
+    except:
+        context.bot.send_message(context.job.context, text="Sorry, encountered an error :(")
 
 def list_jobs(update: Update, context: CallbackContext) -> None:
     current_jobs = context.job_queue.get_jobs_by_name(str(update.message.chat_id))
@@ -125,8 +126,7 @@ def get_once(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
     country = "canada"
     state = "ontario"
-    # try:
-    if True == True:
+    try:
         if len(context.args) >= 1:
             country = str(context.args[0]).lower()
             state = None
@@ -135,10 +135,10 @@ def get_once(update: Update, context: CallbackContext) -> None:
         update.message.reply_chat_action(action=ChatAction.UPLOAD_PHOTO)
         update.message.reply_media_group(getGraphs(country=country, state=state))
         update.message.reply_text(getSummary(country=country, state=state))
-    # except (IndexError, ValueError):
-    #     update.message.reply_text("Usage: /now [country] [region]")
-    # except:
-    #     update.message.reply_text("Country or State not found")
+    except (IndexError, ValueError):
+        update.message.reply_text("Usage: /now [country] [region]")
+    except:
+        update.message.reply_text("Country or State not found")
 
 def daily(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
