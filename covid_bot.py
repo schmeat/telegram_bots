@@ -52,9 +52,10 @@ def getGraphs(country = "canada", state = "ontario"):
 
     if country == "canada":
         images.append(vaccinations.canadaVaccineImage)
-        images.append(vaccinations.ontarioVaccineImage)
-        vaccinations.plotVaccinations()
+        vaccinations.plotCanadaVaccinations()
 
+    if vaccinations.plotVaccinations(state):
+        images.append(vaccinations.stateVaccineImage)
 
     imageFiles = []
     for image in images:
@@ -76,23 +77,19 @@ def getSummary(country = None, state = None) -> str:
         state = state.lower()
         stateSummary = covid_stats_plotter.getRegionSummary(state)
 
-    if (country == "canada") or (state == "ontario"):
-        countryVaccines, stateVaccines = vaccinations.getSummary()
-        if country == "canada":
-            countrySummary += countryVaccines
-        if state == "ontario":
-            stateSummary += stateVaccines
+    if country == "canada":
+        countrySummary += vaccinations.getCanadaSummary()
+    stateSummary += vaccinations.getSummary(state)
 
     return (countrySummary + stateSummary)
 
 def alarm(context: CallbackContext, country = "canada", state = "ontario") -> None:
     """Send the alarm message."""
     context.bot.send_chat_action(context.job.context, action=ChatAction.UPLOAD_PHOTO)
-    try:
-        context.bot.send_media_group(context.job.context, getGraphs(country, state))
-        context.bot.send_message(context.job.context, text=getSummary(country, state))
-    except:
-        context.bot.send_message(context.job.context, text="Sorry, encountered an error :(")
+    context.bot.send_media_group(context.job.context, getGraphs(country, state))
+    context.bot.send_message(context.job.context, text=getSummary(country, state))
+    # except:
+    #     context.bot.send_message(context.job.context, text="Sorry, encountered an error :(")
 
 def list_jobs(update: Update, context: CallbackContext) -> None:
     current_jobs = context.job_queue.get_jobs_by_name(str(update.message.chat_id))
@@ -128,19 +125,20 @@ def get_once(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
     country = "canada"
     state = "ontario"
-    try:
+    # try:
+    if True == True:
         if len(context.args) >= 1:
             country = str(context.args[0]).lower()
             state = None
         if len(context.args) >= 2:
-            state = str(context.args[1]).lower()
+            state = str(" ".join(context.args[1:])).lower()
         update.message.reply_chat_action(action=ChatAction.UPLOAD_PHOTO)
         update.message.reply_media_group(getGraphs(country=country, state=state))
         update.message.reply_text(getSummary(country=country, state=state))
-    except (IndexError, ValueError):
-        update.message.reply_text("Usage: /now [country] [region]")
-    except:
-        update.message.reply_text("Country or State not found")
+    # except (IndexError, ValueError):
+    #     update.message.reply_text("Usage: /now [country] [region]")
+    # except:
+    #     update.message.reply_text("Country or State not found")
 
 def daily(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
@@ -156,7 +154,7 @@ def daily(update: Update, context: CallbackContext) -> None:
             country = str(context.args[1]).lower()
             state = None
         if len(context.args) >= 3:
-            state = str(context.args[2]).lower()
+            state = str(" ".join(context.args[2:])).lower()
         getDataFunc = lambda context: alarm(context=context, country=country, state=state)
         context.job_queue.run_daily(getDataFunc, time.time(), context=chat_id, name=str(chat_id))
 
@@ -171,7 +169,7 @@ def repeat_timer(update: Update, context: CallbackContext) -> None:
     chat_id = update.message.chat_id
     try:
         # args[0] should contain the time for the timer in hours
-        due = int(context.args[0]) * 3600
+        due = int(context.args[0]) # * 3600
         if due < 0:
             update.message.reply_text('Sorry we can not go back to future!')
             return
@@ -182,7 +180,7 @@ def repeat_timer(update: Update, context: CallbackContext) -> None:
             country = str(context.args[1]).lower()
             state = None
         if len(context.args) >= 3:
-            state = str(context.args[2]).lower()
+            state = str(" ".join(context.args[2:])).lower()
 
         getDataFunc = lambda context: alarm(context=context, country=country, state=state)
         context.job_queue.run_repeating(getDataFunc, due, context=chat_id, name=str(chat_id))

@@ -13,10 +13,38 @@ import json
 from matplotlib import pyplot as plt
 import pandas as pd
 
-ontarioVaccineImage = "ontario_vaccines.png"
+stateVaccineImage = "state_vaccines.png"
 canadaVaccineImage = "canada_vaccines.png"
-urlOntario = "https://api.covid19tracker.ca/reports/province/ON"
+urlProvince = "https://api.covid19tracker.ca/reports/province/"
 urlCanada = "https://api.covid19tracker.ca/reports"
+urlSuffix = {
+    "Alberta" : "AB",
+    "British Columbia" : "BC",
+    "Manitoba" : "MB",
+    "New Brunswick" : "NB",
+    "Newfoundland and Labrador" : "NL",
+    "Northwest Territories" : "NT",
+    "Nova Scotia" : "NS",
+    "Nunavut" : "NU",
+    "Ontario" : "ON",
+    "Prince Edward Island" : "PE",
+    "Quebec" : "QC",
+    "Saskatchewan" : "SK",
+    "Yukon" : "YT",
+    "AB" : "AB",
+    "BC" : "BC",
+    "MB" : "MB",
+    "NB" : "NB",
+    "NL" : "NL",
+    "NT" : "NT",
+    "NS" : "NS",
+    "NU" : "NU",
+    "ON" : "ON",
+    "PE" : "PE",
+    "QC" : "QC",
+    "SK" : "SK",
+    "YT" : "YT",
+}
 
 def plotVaccinationsForURL(url, title = "Vaccinations", outputImage = "vaccinations.png"):
     jsonData = json.loads(urllib.request.urlopen(url).read().decode())
@@ -55,9 +83,17 @@ def plotVaccinationsForURL(url, title = "Vaccinations", outputImage = "vaccinati
     fig.savefig(outputImage, format='png', dpi=100, bbox_inches='tight')
     plt.close()
 
-def plotVaccinations():
+def plotCanadaVaccinations():
     plotVaccinationsForURL(urlCanada, "Vaccinations for Canada", canadaVaccineImage)
-    plotVaccinationsForURL(urlOntario, "Vaccinations for Ontario", ontarioVaccineImage)
+
+def plotVaccinations(province = "Ontario") -> bool:
+    province = province.title()
+    if province not in urlSuffix:
+        print("FML")
+        return False
+    else:
+        plotVaccinationsForURL(urlProvince + urlSuffix[province], "Vaccinations for " + province.title(), stateVaccineImage)
+        return True
 
 def getSummaryData(url, title):
     summary = {}
@@ -73,14 +109,20 @@ def getSummaryData(url, title):
 
     return outputString
 
-def getSummary():
-    countryString = getSummaryData(urlCanada, "Canada Vaccinations")
-    provinceString = getSummaryData(urlOntario, "Ontario Vaccinations")
-    return (countryString.title(), provinceString.title())
+def getCanadaSummary() -> str:
+    return getSummaryData(urlCanada, "Canada Vaccinations").title()
+
+def getSummary(province = "Ontario"):
+    province = province.title()
+    provinceString = ""
+    if province in urlSuffix:
+        provinceString = getSummaryData(urlProvince + urlSuffix[province],
+                                        province.title() + " Vaccinations")
+    return provinceString.title()
 
 def main() -> None:
-    plotVaccinations()
-    print(getSummary())
+    for (key, item) in urlSuffix.items():
+        print(getSummaryData(urlProvince + item, key + " Vaccinations"))
 
 if __name__ == '__main__':
     main()

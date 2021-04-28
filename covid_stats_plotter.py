@@ -105,6 +105,7 @@ def plotData(res, key, title = "COVID Cases", outputImage = "current_plot.png"):
     last = 0
     last2 = 0
     dbKey = key.lower().replace(" ", "_")
+    print(dbKey)
     for day, data in res[dbKey]['history'].items():
         days.append(day)
         confirmed = data['confirmed']
