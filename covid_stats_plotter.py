@@ -25,8 +25,8 @@ def getSummary(res, title):
 
     secondLastData = res[list(res)[current_index - 1]]
     date = pd.to_datetime(list(res)[current_index]).date()
-    summaryTitle = "#### Summary for: " + title + "####"
-    asOfTitle = "_" + "As of: " + str(date) + "_"
+    summaryTitle = "<h3>" + "Summary for: " + title + "</h3>"
+    asOfTitle = "<i>" + "As of: " + str(date) + </i>"
     outputString = summaryTitle + "\n" + asOfTitle + "\n"
     for key, value in summaryMapToday.items():
         if value in currentData:
